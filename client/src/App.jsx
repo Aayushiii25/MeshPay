@@ -1,52 +1,60 @@
-import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import Login from "./components/Login";
-import Signup from "./components/Signup";
-import QrCode from "./pages/QrCode";
-import QrScanner from "./pages/QrScanner";
-import Transaction from "./pages/Transaction";
-import CheckBalance from "./pages/CheckBalance";
-import HomeOnline from "./pages/HomeOnline";
-import HomeOffline from "./pages/HomeOffline";
-import OfflinePay from "./pages/OfflinePay";
-import PayUPI from "./pages/PayUPI";
-import PayUPIOffline from "./pages/PayUPIOffline";
-import CheckBalanceOffline from "./pages/CheckBalanceOffline";
-import TransactionOffline from "./pages/TransactionOffline";
-import BudgetTracker from "./pages/BudgetTracker";
-import EnhancedOfflineNotes from "./pages/EnhancedOfflineNotes";
+
+// 🔐 Auth
+import Login from "./components/auth/Login";
+import Signup from "./components/auth/Signup";
+
+// 🌐 Online pages
+import HomeOnline from "./pages/online/HomeOnline";
+import PayUPI from "./pages/online/PayUPI";
+import Transaction from "./pages/online/Transaction";
+import CheckBalance from "./pages/online/CheckBalance";
+import QrCode from "./pages/online/QrCode";
+import QrScanner from "./pages/online/QrScanner";
+
+// 📡 Offline pages
+import HomeOffline from "./pages/offline/HomeOffline";
+import PayUPIOffline from "./pages/offline/PayUPIOffline";
+import TransactionOffline from "./pages/offline/TransactionOffline";
+import CheckBalanceOffline from "./pages/offline/CheckBalanceOffline";
+import OfflinePay from "./pages/offline/OfflinePay";
+
+// 🧠 Utility pages
+import BudgetTracker from "./pages/utility/BudgetTracker";
+import EnhancedOfflineNotes from "./pages/utility/EnhancedOfflineNotes";
 
 function App() {
   return (
-    <>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<HomeOnline />} />
-          <Route path="/offlinePay" element={<HomeOffline />} />
+    <Router>
+      <Routes>
+        {/* 🔐 Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/qr" element={<QrCode />} />
-          <Route path="/qrscanner" element={<QrScanner />} />
-          <Route path="/payUpi" element={<PayUPI />} />
-          <Route path="/payUpiOffline" element={<PayUPIOffline />} />
-          <Route path="/transaction" element={<Transaction />} />
-          <Route path="/transactionOffline" element={<TransactionOffline />} />
-          <Route path="/checkBalance" element={<CheckBalance />} />
-          <Route path="/offline" element={<OfflinePay />} />
-          <Route
-            path="/checkbalanceoffline"
-            element={<CheckBalanceOffline />}
-          />
-          <Route path="/budgetTracker" element={<BudgetTracker />} />
-          <Route
-            path="/enhancedofflinenotes"
-            element={<EnhancedOfflineNotes />}
-          />
-        </Routes>
-      </Router>
-    </>
+        {/* 🌐 Online */}
+        <Route path="/" element={<HomeOnline />} />
+        <Route path="/qr" element={<QrCode />} />
+        <Route path="/qrscanner" element={<QrScanner />} />
+        <Route path="/payUpi" element={<PayUPI />} />
+        <Route path="/transaction" element={<Transaction />} />
+        <Route path="/checkBalance" element={<CheckBalance />} />
+
+        {/* 📡 Offline */}
+        <Route path="/offlinePay" element={<HomeOffline />} />
+        <Route path="/offline" element={<OfflinePay />} />
+        <Route path="/payUpiOffline" element={<PayUPIOffline />} />
+        <Route path="/transactionOffline" element={<TransactionOffline />} />
+        <Route path="/checkbalanceoffline" element={<CheckBalanceOffline />} />
+
+        {/* 🧠 Utility */}
+        <Route path="/budgetTracker" element={<BudgetTracker />} />
+        <Route
+          path="/enhancedofflinenotes"
+          element={<EnhancedOfflineNotes />}
+        />
+      </Routes>
+    </Router>
   );
 }
 
