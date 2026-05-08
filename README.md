@@ -98,9 +98,30 @@ Pin, archive, categorize, and CRUD personal/work/transaction notes. Sorted by pi
 | **Notes** | Card grid with pin/archive/edit actions |
 | **Mobile — Dashboard** | Responsive hamburger nav + card grid |
 
-> **Tip:** Use [Shots.so](https://shots.so) or [Mockup.photos](https://mockup.photos) to wrap screenshots in device frames.
+<br/>
+
+<div align="center">
+
+| Login | Dashboard |
+|:-----:|:---------:|
+| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) |
+
+| Send Money | Transaction History |
+|:----------:|:-------------------:|
+| ![Pay UPI](screenshots/pay_upi.png) | ![Transactions](screenshots/transactions.png) |
+
+| Budget Tracker | QR Code |
+|:--------------:|:-------:|
+| ![Budget](screenshots/budget.png) | ![QR](screenshots/qr_code.png) |
+
+| Notes |
+|:-----:|
+| ![Notes](screenshots/notes.png) |
+
+</div>
 
 ---
+
 
 ## Architecture
 
@@ -439,46 +460,6 @@ API response:  toJSON() strips password + pin from every User object
 - [ ] **Scheduled Sync** — Auto-process queued offline transactions when connectivity returns
 - [ ] **Docker + CI/CD** — `docker-compose.yml` + GitHub Actions pipeline
 - [ ] **Spending Insights AI** — LLM-powered analysis of spending patterns
-
----
-
-## Resume-Worthy Technical Highlights
-
-```
-✦ Designed and implemented an offline payment protocol using SMS relay (Twilio)
-  — handling encoding, transmission, server-side decoding, and async confirmation
-
-✦ Built a full-stack fintech application from scratch:
-  JWT auth, bcrypt PIN hashing, atomic balance transfers, QR payment flows
-
-✦ Identified and resolved critical security vulnerabilities:
-  plaintext financial PINs, credential leaks in API responses, CORS misconfiguration
-
-✦ Architected a centralized API abstraction layer with Axios interceptors
-  — auto token injection, global 401 handling, unified error propagation
-
-✦ Implemented lazy-loading + code splitting across all routes
-  — initial load < 5KB, each page loaded on demand via React.lazy + Suspense
-
-✦ Built a custom CSS design system from scratch (no framework dependency)
-  — CSS custom properties, glassmorphism cards, dark luxury aesthetic
-```
-
----
-
-## Why a Recruiter Should Care
-
-This project is not a tutorial follow-along. It's not a CRUD app with a login page.
-
-MeshPay solves a **real infrastructure gap** in India's payments ecosystem. It demonstrates:
-
-- **Systems thinking** — offline-first architecture, not just "add a feature"
-- **Security awareness** — most student fintech projects store PINs in plaintext. This doesn't.
-- **Production habits** — centralized error handling, env-based config, route guards, API abstraction
-- **Product sensibility** — every screen has a purpose; features are designed, not bolted on
-- **Engineering maturity** — found and fixed bugs in its own codebase before they shipped
-
-If you're hiring someone who will think beyond the ticket — this is the project that signals that.
 
 ---
 
