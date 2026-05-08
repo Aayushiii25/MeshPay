@@ -1,104 +1,56 @@
-//Shows current balance
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { paymentAPI } from "../../lib/api";
 import Navbar from "../../components/navbar/Navbar";
-import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
+import { Eye, Loader } from "lucide-react";
 
-const CheckBalance = () => {
-  const [balance, setBalance] = useState(null);
+export default function CheckBalance() {
   const [pin, setPin] = useState("");
-  const [showPinModal, setShowPinModal] = useState(true);
+  const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-
-  const fetchBalance = async () => {
+  const handleSubmit = async () => {
+    if (pin.length !== 4) { toast.error("Enter 4-digit PIN"); return; }
+    setLoading(true);
     try {
-      setLoading(true);
-
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/users/checkBalance`,
-        { pin },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setBalance(res.data.balance);
-      setShowPinModal(false);
-    } catch (error) {
-      alert(error.response?.data?.message || "Invalid PIN");
+      const { data } = await paymentAPI.checkBalance(pin);
+      setBalance(data.balance);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to check balance");
       setPin("");
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePinSubmit = () => {
-    if (pin.length !== 4) {
-      alert("PIN must be 4 digits");
-      return;
-    }
-    fetchBalance();
-  };
-
   return (
     <>
       <Navbar />
-
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-white/20 dark:border-gray-700/30 p-8 rounded-xl shadow-lg text-center w-[350px]">
-          <h1 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-            Check Balance 💰
-          </h1>
-
+      <div className="page-center">
+        <div className="modal-content animate-in text-center" style={{ maxWidth: 380 }}>
           {balance !== null ? (
-            <p className="text-2xl font-semibold text-green-600">₹ {balance}</p>
+            <>
+              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent-dim)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}>
+                <Eye size={28} style={{ color: "var(--accent)" }} />
+              </div>
+              <p className="text-muted text-sm">Available Balance</p>
+              <p className="amount" style={{ fontSize: "2.5rem", color: "var(--accent)", margin: "0.5rem 0 2rem" }}>₹{balance?.toLocaleString("en-IN")}</p>
+              <button className="btn btn-secondary btn-full" onClick={() => { setBalance(null); setPin(""); }}>Hide Balance</button>
+            </>
           ) : (
-            <p className="text-gray-500">Enter PIN to view balance</p>
+            <>
+              <h2 className="heading-md" style={{ marginBottom: "0.5rem" }}>Check Balance</h2>
+              <p className="text-muted text-sm" style={{ marginBottom: "1.5rem" }}>Enter your PIN to view balance</p>
+              <input className="input input-pin" type="password" maxLength={4} placeholder="••••" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} autoFocus />
+              <button className="btn btn-primary btn-full" style={{ marginTop: "1rem" }} onClick={handleSubmit} disabled={loading}>
+                {loading ? <><Loader size={16} className="spin" /> Checking...</> : "View Balance"}
+              </button>
+            </>
           )}
         </div>
-
-        {/* 🔐 PIN MODAL */}
-        {showPinModal && (
-          <div className="fixed inset-0 flex justify-center items-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white/80 backdrop-blur-xl p-6 rounded-xl shadow-lg w-80">
-              <h2 className="mb-4 font-bold text-center text-black">
-                Enter PIN 🔐
-              </h2>
-
-              <input
-                type="password"
-                value={pin}
-                onChange={(e) =>
-                  setPin(e.target.value.replace(/\D/g, "").slice(0, 4))
-                }
-                className="w-full p-2 border rounded mb-4 text-black"
-                placeholder="4 digit PIN"
-              />
-
-              <button
-                onClick={handlePinSubmit}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-2 rounded-lg hover:scale-105 transition-all"
-              >
-                {loading ? "Checking..." : "Submit 🚀"}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+      <Toaster position="bottom-center" toastOptions={{ style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" } }} />
+      <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
-};
-
-export default CheckBalance;
+}

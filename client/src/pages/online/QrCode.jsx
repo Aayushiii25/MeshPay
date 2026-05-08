@@ -1,137 +1,58 @@
-//Shows YOUR QR code to receive money
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/navbar/Navbar";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
+import { Download, Copy, Check } from "lucide-react";
 
-const QrCodePage = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const navigate = useNavigate();
+export default function QrCode() {
+  const { user } = useAuth();
   const qrRef = useRef(null);
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
+  const qrPayload = JSON.stringify({ v: 1, type: "upi_request", upiId: user?.upiId, userId: user?._id });
 
-  const fetchUser = async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/users/getUser`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      setUser(res.data.user);
-    } catch (err) {
-      console.error("User fetch error:", err);
-      setError("Failed to load user");
-      navigate("/login");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🔐 Structured payload (future-proof)
-  const qrPayload = JSON.stringify({
-    v: 1, // versioning
-    type: "upi_request",
-    upiId: user?.upiId,
-    userId: user?._id,
-  });
-
-  // 📥 Download QR
   const downloadQR = () => {
     const canvas = qrRef.current?.querySelector("canvas");
     if (!canvas) return;
-
-    const url = canvas.toDataURL("image/png");
     const a = document.createElement("a");
-    a.href = url;
+    a.href = canvas.toDataURL("image/png");
     a.download = "meshpay-qr.png";
     a.click();
+    toast.success("QR downloaded");
   };
 
-  // 📋 Copy UPI
-  const copyUPI = () => {
-    navigator.clipboard.writeText(user?.upiId || "");
-    alert("UPI copied 👍");
+  const copyUPI = async () => {
+    await navigator.clipboard.writeText(user?.upiId || "");
+    setCopied(true);
+    toast.success("UPI copied");
+    setTimeout(() => setCopied(false), 2000);
   };
-
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center text-lg">
-        Generating your MeshPay QR… 📡
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-screen flex items-center justify-center text-red-500">
-        {error}
-      </div>
-    );
-  }
 
   return (
     <>
       <Navbar />
-
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-          Your Payment QR 💸
-        </h1>
-
-        {/* QR CARD */}
-        <div
-          ref={qrRef}
-          className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20"
-        >
-          <QRCodeCanvas
-            value={qrPayload}
-            size={200}
-            level="H"
-            includeMargin={true}
-          />
-        </div>
-
-        {/* UPI */}
-        <div className="bg-white/70 dark:bg-gray-800/70 px-4 py-2 rounded-md border text-center">
-          <p className="text-sm text-gray-500">UPI ID</p>
-          <p className="font-semibold">{user?.upiId}</p>
-        </div>
-
-        {/* ACTIONS */}
-        <div className="flex gap-3">
-          <button
-            onClick={copyUPI}
-            className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:scale-105 transition"
-          >
-            Copy UPI
-          </button>
-
-          <button
-            onClick={downloadQR}
-            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:scale-105 transition"
-          >
-            Download QR
-          </button>
+      <div className="page-center">
+        <div className="modal-content animate-in text-center" style={{ maxWidth: 380 }}>
+          <h2 className="heading-md" style={{ marginBottom: "1.5rem" }}>Your QR Code</h2>
+          <div ref={qrRef} style={{ background: "white", borderRadius: 16, padding: 24, display: "inline-block", margin: "0 auto" }}>
+            <QRCodeCanvas value={qrPayload} size={200} level="H" includeMargin={false} />
+          </div>
+          <div className="glass-card" style={{ padding: "0.875rem", marginTop: "1.25rem", textAlign: "center" }}>
+            <p className="text-muted text-xs">UPI ID</p>
+            <p style={{ fontWeight: 600, fontFamily: "var(--font-display)" }}>{user?.upiId}</p>
+          </div>
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem" }}>
+            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={copyUPI}>
+              {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy UPI"}
+            </button>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={downloadQR}>
+              <Download size={16} /> Download
+            </button>
+          </div>
         </div>
       </div>
+      <Toaster position="bottom-center" toastOptions={{ style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" } }} />
     </>
   );
-};
-
-export default QrCodePage;
+}

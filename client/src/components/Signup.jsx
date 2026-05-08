@@ -1,178 +1,79 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
-import logo from "../assets/logo.png";
-import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export default function Signup() {
+  const { register } = useAuth();
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    userName: "",
-    fullName: "",
-    email: "",
-    pin: "",
-    phoneNo: "",
-    password: "",
-  });
-
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({ userName: "", fullName: "", email: "", pin: "", phoneNo: "", password: "" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.pin.length !== 4 || isNaN(form.pin)) { toast.error("PIN must be 4 digits"); return; }
+    if (form.phoneNo.length !== 10 || isNaN(form.phoneNo)) { toast.error("Phone must be 10 digits"); return; }
+    if (form.password.length < 6) { toast.error("Password must be 6+ characters"); return; }
 
     setLoading(true);
-
     try {
-      if (isNaN(formData.pin) || formData.pin.length !== 4) {
-        throw new Error("PIN must be 4 digits");
-      }
-
-      if (isNaN(formData.phoneNo) || formData.phoneNo.length !== 10) {
-        throw new Error("Phone number must be 10 digits");
-      }
-
-      await axios.post(`${import.meta.env.VITE_API_URL}/users/register`, {
-        ...formData,
-        pin: Number(formData.pin),
-        phoneNo: Number(formData.phoneNo),
-      });
-
-      toast.success("Registration successful 🚀");
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      await register({ ...form, pin: Number(form.pin), phoneNo: form.phoneNo });
+      toast.success("Account created!");
+      setTimeout(() => navigate("/login"), 1000);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const fields = [
+    { name: "userName", label: "Username", placeholder: "Choose a username", type: "text" },
+    { name: "fullName", label: "Full Name", placeholder: "Your full name", type: "text" },
+    { name: "email", label: "Email", placeholder: "you@email.com", type: "email" },
+    { name: "phoneNo", label: "Phone Number", placeholder: "10-digit number", type: "tel" },
+    { name: "pin", label: "4-Digit PIN", placeholder: "••••", type: "password" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border p-8">
-        {/* logo */}
-        <img src={logo} alt="logo" className="w-28 mx-auto mb-6" />
-
-        {/* tabs */}
-        <div className="flex gap-2 mb-8">
-          <Link
-            to="/login"
-            className="flex items-center gap-2 px-4 py-2 text-gray-500 text-sm"
-          >
-            <LogIn size={16} />
-            Login
-          </Link>
-
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl border shadow text-sm">
-            <UserPlus size={16} />
-            Sign Up
-          </button>
+    <div className="page-center" style={{ background: "var(--bg-primary)" }}>
+      <div className="auth-container animate-in">
+        <div className="auth-header">
+          <div className="brand-icon" style={{ width: 48, height: 48, fontSize: "1.25rem", borderRadius: 12 }}>M</div>
+          <h1 className="heading-lg" style={{ marginTop: "1.25rem" }}>Create account</h1>
+          <p className="text-muted" style={{ marginTop: "0.5rem" }}>Join MeshPay and start transacting</p>
         </div>
 
-        {/* heading */}
-        <h1 className="text-3xl font-bold mb-2">Create Account ✨</h1>
+        <form onSubmit={handleSubmit} className="auth-form">
+          {fields.map((f) => (
+            <div className="input-group" key={f.name}>
+              <label className="input-label">{f.label}</label>
+              <input name={f.name} type={f.type} className="input" placeholder={f.placeholder} required value={form[f.name]} onChange={update} />
+            </div>
+          ))}
 
-        <p className="text-gray-500 mb-8">Join MeshPay today</p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            name="userName"
-            placeholder="Username"
-            value={formData.userName}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-2xl px-5 py-4"
-          />
-
-          <input
-            name="fullName"
-            placeholder="Full Name"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-2xl px-5 py-4"
-          />
-
-          <input
-            name="email"
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-2xl px-5 py-4"
-          />
-
-          <input
-            name="pin"
-            placeholder="4-digit PIN"
-            value={formData.pin}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-2xl px-5 py-4"
-          />
-
-          <input
-            name="phoneNo"
-            placeholder="Phone Number"
-            value={formData.phoneNo}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-2xl px-5 py-4"
-          />
-
-          {/* password */}
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-2xl px-5 py-4 pr-12"
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-            >
-              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-            </button>
+          <div className="input-group">
+            <label className="input-label">Password</label>
+            <div style={{ position: "relative" }}>
+              <input type={showPw ? "text" : "password"} name="password" className="input" placeholder="Min 6 characters" required value={form.password} onChange={update} style={{ paddingRight: "3rem" }} />
+              <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
+                {showPw ? <Eye size={18} /> : <EyeOff size={18} />}
+              </button>
+            </div>
           </div>
 
-          <button
-            disabled={loading}
-            className="w-full bg-black text-white py-4 rounded-2xl font-medium"
-          >
-            {loading ? "Creating..." : "Create Account"}
+          <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+            {loading ? "Creating..." : "Create Account"} {!loading && <ArrowRight size={18} />}
           </button>
         </form>
 
-        <p className="text-center mt-6 text-sm text-gray-500">
-          Already have an account?
-          <Link to="/login" className="ml-2 font-medium text-black">
-            Login
-          </Link>
-        </p>
+        <p className="auth-footer">Already have an account? <Link to="/login" className="auth-link">Sign in</Link></p>
       </div>
-
-      <Toaster position="bottom-center" />
+      <Toaster position="bottom-center" toastOptions={{ style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" } }} />
     </div>
   );
 }

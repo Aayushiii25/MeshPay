@@ -1,198 +1,121 @@
-//Send money using UPI
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { paymentAPI } from "../../lib/api";
 import Navbar from "../../components/navbar/Navbar";
+import { ArrowRight, ArrowLeft, Check, Loader } from "lucide-react";
 
-const PayUPI = () => {
-  const [step, setStep] = useState(1); // 🔥 clean step control
-  const [loading, setLoading] = useState(false);
-  const [statusPopup, setStatusPopup] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [paymentData, setPaymentData] = useState({
-    senderId: localStorage.getItem("userId"), // 🔥 no API call
-    receiverUpi: "",
-    amount: "",
-    pin: "",
-  });
-
+export default function PayUPI() {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [form, setForm] = useState({ receiverUpi: "", amount: "", pin: "" });
 
-  // 🔥 validation
   const validateUPI = (upi) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/.test(upi);
 
-  // STEP 1 → UPI
-  const handleReceiver = () => {
-    if (!paymentData.receiverUpi) {
-      toast.error("UPI required");
-      return;
+  const next = () => {
+    if (step === 1) {
+      if (!form.receiverUpi || !validateUPI(form.receiverUpi)) { toast.error("Enter a valid UPI ID"); return; }
+      setStep(2);
+    } else if (step === 2) {
+      if (!form.amount || Number(form.amount) <= 0) { toast.error("Enter a valid amount"); return; }
+      setStep(3);
     }
-    if (!validateUPI(paymentData.receiverUpi)) {
-      toast.error("Invalid UPI");
-      return;
-    }
-    setStep(2);
   };
 
-  // STEP 2 → Amount
-  const handleAmount = () => {
-    const amount = Number(paymentData.amount);
-
-    if (!amount || amount <= 0) {
-      toast.error("Invalid amount");
-      return;
-    }
-
-    setStep(3);
-  };
-
-  // STEP 3 → PIN + API
-  const handlePayment = async () => {
-    if (paymentData.pin.length !== 4) {
-      toast.error("PIN must be 4 digits");
-      return;
-    }
-
+  const handlePay = async () => {
+    if (form.pin.length !== 4) { toast.error("Enter 4-digit PIN"); return; }
     setLoading(true);
-
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/users/sendMoney`,
-        {
-          ...paymentData,
-          amount: Number(paymentData.amount),
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      setSuccess(true);
-      setStatusPopup(true);
-    } catch (error) {
-      setSuccess(false);
-      setErrorMessage(error.response?.data?.message || "Payment failed");
-      setStatusPopup(true);
+      const { data } = await paymentAPI.send({
+        receiverUpi: form.receiverUpi,
+        amount: Number(form.amount),
+        pin: form.pin,
+      });
+      setResult({ success: true, ref: data.referenceNumber });
+    } catch (err) {
+      setResult({ success: false, msg: err.response?.data?.message || "Payment failed" });
     } finally {
       setLoading(false);
     }
   };
 
-  const reset = () => {
-    setPaymentData({
-      senderId: paymentData.senderId,
-      receiverUpi: "",
-      amount: "",
-      pin: "",
-    });
-    setStep(1);
-    setStatusPopup(false);
-    navigate("/");
-  };
+  const titles = ["", "Recipient", "Amount", "Confirm"];
+
+  if (result) {
+    return (
+      <>
+        <Navbar />
+        <div className="page-center">
+          <div className="modal-content text-center animate-in" style={{ maxWidth: 380 }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: result.success ? "var(--accent-dim)" : "rgba(255,77,106,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
+              <Check size={28} style={{ color: result.success ? "var(--accent)" : "var(--error)" }} />
+            </div>
+            <h2 className="heading-md">{result.success ? "Payment Sent!" : "Payment Failed"}</h2>
+            <p className="text-muted" style={{ margin: "0.75rem 0 1.5rem" }}>
+              {result.success ? `₹${form.amount} sent to ${form.receiverUpi}` : result.msg}
+            </p>
+            {result.success && <p className="text-xs text-muted">Ref: {result.ref}</p>}
+            <button className="btn btn-primary btn-full" style={{ marginTop: "1.5rem" }} onClick={() => navigate("/")}>Done</button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <Navbar />
+      <div className="page-center">
+        <div className="modal-content animate-in" style={{ maxWidth: 400 }}>
+          <div style={{ display: "flex", gap: 4, marginBottom: "1.5rem" }}>
+            {[1, 2, 3].map((s) => (
+              <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? "var(--accent)" : "var(--bg-elevated)" }} />
+            ))}
+          </div>
+          <h2 className="heading-md" style={{ marginBottom: "1.5rem" }}>{titles[step]}</h2>
 
-      {/* STEP UI */}
-      {step === 1 && (
-        <Modal title="Enter UPI">
-          <Input
-            value={paymentData.receiverUpi}
-            onChange={(val) =>
-              setPaymentData({ ...paymentData, receiverUpi: val })
-            }
-            placeholder="example@upi"
-          />
-          <Button onClick={handleReceiver}>Next</Button>
-        </Modal>
-      )}
+          {step === 1 && (
+            <div className="input-group">
+              <label className="input-label">UPI ID</label>
+              <input className="input" placeholder="name@meshpay" value={form.receiverUpi} onChange={(e) => setForm({ ...form, receiverUpi: e.target.value })} autoFocus />
+            </div>
+          )}
+          {step === 2 && (
+            <div className="input-group">
+              <label className="input-label">Amount (₹)</label>
+              <input className="input" type="number" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} autoFocus style={{ fontSize: "1.5rem", fontWeight: 700, fontFamily: "var(--font-display)" }} />
+            </div>
+          )}
+          {step === 3 && (
+            <>
+              <div className="glass-card" style={{ padding: "1rem", marginBottom: "1rem" }}>
+                <p className="text-muted text-sm">Sending to</p>
+                <p style={{ fontWeight: 600 }}>{form.receiverUpi}</p>
+                <p className="amount" style={{ fontSize: "1.5rem", color: "var(--accent)", marginTop: "0.5rem" }}>₹{form.amount}</p>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Enter PIN</label>
+                <input className="input input-pin" type="password" maxLength={4} placeholder="••••" value={form.pin} onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 4) })} autoFocus />
+              </div>
+            </>
+          )}
 
-      {step === 2 && (
-        <Modal title="Enter Amount">
-          <Input
-            type="number"
-            value={paymentData.amount}
-            onChange={(val) => setPaymentData({ ...paymentData, amount: val })}
-          />
-          <Button onClick={() => setStep(1)}>Back</Button>
-          <Button onClick={handleAmount}>Next</Button>
-        </Modal>
-      )}
-
-      {step === 3 && (
-        <Modal title="Enter PIN">
-          <Input
-            type="password"
-            value={paymentData.pin}
-            onChange={(val) =>
-              setPaymentData({
-                ...paymentData,
-                pin: val.replace(/\D/g, "").slice(0, 4),
-              })
-            }
-          />
-          <Button onClick={() => setStep(2)}>Back</Button>
-          <Button onClick={handlePayment}>
-            {loading ? "Processing..." : "Pay 🚀"}
-          </Button>
-        </Modal>
-      )}
-
-      {/* STATUS POPUP */}
-      {statusPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-gray-700 p-6 rounded-xl text-center w-80">
-            <h2 className="text-xl mb-2">
-              {success ? "Success 🎉" : "Failed ❌"}
-            </h2>
-            <p>
-              {success
-                ? `₹${paymentData.amount} sent to ${paymentData.receiverUpi}`
-                : errorMessage}
-            </p>
-            <button onClick={reset} className="btn mt-4">
-              OK
-            </button>
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
+            {step > 1 && <button className="btn btn-secondary" onClick={() => setStep(step - 1)}><ArrowLeft size={16} /> Back</button>}
+            {step < 3 ? (
+              <button className="btn btn-primary btn-full" onClick={next}>Next <ArrowRight size={16} /></button>
+            ) : (
+              <button className="btn btn-primary btn-full" onClick={handlePay} disabled={loading}>
+                {loading ? <><Loader size={16} className="spin" /> Processing...</> : "Pay Now"}
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
+      <Toaster position="bottom-center" toastOptions={{ style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" } }} />
+      <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
-};
-
-export default PayUPI;
-
-/* 🔥 reusable components (clean code) */
-
-const Modal = ({ title, children }) => (
-  <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-    <div className="bg-gray-300 p-4 rounded-md w-80">
-      <h2 className="mb-3 font-bold">{title}</h2>
-      {children}
-    </div>
-  </div>
-);
-
-const Input = ({ value, onChange, ...props }) => (
-  <input
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    className="w-full p-2 mb-3 border rounded"
-    {...props}
-  />
-);
-
-const Button = ({ children, ...props }) => (
-  <button
-    {...props}
-    className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 rounded mr-2"
-  >
-    {children}
-  </button>
-);
+}

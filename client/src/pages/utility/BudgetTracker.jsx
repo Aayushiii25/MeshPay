@@ -1,331 +1,192 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-
-import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { budgetAPI } from "../../lib/api";
+import { authAPI } from "../../lib/api";
 import Navbar from "../../components/navbar/Navbar";
-import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { Plus, Trash2, AlertTriangle } from "lucide-react";
 
-const BudgetTracker = () => {
-  const navigate = useNavigate();
+const COLORS = ["#00e68a", "#5b8def", "#a78bfa", "#f472b6", "#ffb347", "#22d3ee"];
+const CATEGORIES = ["Food", "Transport", "Entertainment", "Utilities", "Shopping", "Other"];
 
+export default function BudgetTracker() {
   const [budget, setBudget] = useState(0);
-  const [expenses, setExpenses] = useState(0);
-  const [inputExpense, setInputExpense] = useState("");
-  const [pin, setPin] = useState("");
-  const [showPinModal, setShowPinModal] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [expenseList, setExpenseList] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [inputAmount, setInputAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-
+  const [loading, setLoading] = useState(false);
+  const [pinVerified, setPinVerified] = useState(false);
+  const [pin, setPin] = useState("");
   const warnedRef = useRef(false);
 
-  const categories = [
-    "Food",
-    "Transport",
-    "Entertainment",
-    "Utilities",
-    "Shopping",
-    "Other",
-  ];
-
-  // 🔐 VERIFY PIN (SECURE)
-  const handlePinSubmit = async () => {
+  const verifyPin = async () => {
+    if (pin.length !== 4) { toast.error("Enter 4-digit PIN"); return; }
     try {
-      const token = localStorage.getItem("token");
-
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/users/verifyPin`,
-        { pin },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      setShowPinModal(false);
-    } catch {
-      alert("Invalid PIN ❌");
-      setPin("");
-    }
+      await authAPI.verifyPin(pin);
+      setPinVerified(true);
+      fetchData();
+    } catch { toast.error("Invalid PIN"); setPin(""); }
   };
 
-  // 👤 FETCH USER
-  const fetchUser = async () => {
+  const fetchData = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/users/getUser`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      setBudget(Number(res.data.user.budget) || 0);
-      setExpenses(Number(res.data.user.expenses) || 0);
-    } catch {
-      navigate("/login");
-    }
+      const [budgetRes, expRes] = await Promise.all([budgetAPI.get(), budgetAPI.getExpenses()]);
+      setBudget(budgetRes.data.budget || 0);
+      setExpenses(expRes.data || []);
+    } catch { toast.error("Failed to load budget data"); }
   };
 
-  // 📜 FETCH EXPENSES
-  const fetchExpenses = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/users/getExpenses`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      setExpenseList(res.data || []);
-    } catch {
-      alert("Failed to load expenses ❌");
-    }
-  };
-
-  useEffect(() => {
-    fetchUser();
-    fetchExpenses();
-  }, []);
-
-  // ➕ ADD EXPENSE
-  const handleAddExpense = async () => {
-    const amount = Number(inputExpense);
-
-    if (!amount || amount <= 0) {
-      alert("Enter valid amount");
-      return;
-    }
-
-    if (!selectedCategory) {
-      alert("Select category");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const token = localStorage.getItem("token");
-
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/users/addExpense`,
-        { amount, category: selectedCategory },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      setBudget(res.data.updatedUser.budget);
-      setExpenses(res.data.updatedUser.expenses);
-
-      await fetchExpenses();
-
-      setInputExpense("");
-      setSelectedCategory("");
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed ❌");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 💰 UPDATE BUDGET
-  const handleUpdateBudget = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/users/updateBudget`,
-        { budget },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      setBudget(res.data.user.budget);
-      setExpenses(res.data.user.expenses);
-    } catch {
-      alert("Update failed ❌");
-    }
-  };
-
-  // 📊 FILTER EXPENSES
-  const filteredExpenses = expenseList.filter((e) => {
-    return new Date(e.date).getMonth() + 1 === Number(selectedMonth);
-  });
-
-  const monthlyTotal = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-
+  const filtered = useMemo(() => expenses.filter((e) => new Date(e.date).getMonth() + 1 === Number(selectedMonth)), [expenses, selectedMonth]);
+  const monthlyTotal = useMemo(() => filtered.reduce((s, e) => s + e.amount, 0), [filtered]);
   const remaining = budget - monthlyTotal;
 
-  // ⚠️ 90% WARNING
+  const categoryData = useMemo(() => {
+    const map = {};
+    filtered.forEach((e) => { map[e.category] = (map[e.category] || 0) + e.amount; });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
+  }, [filtered]);
+
+  const topCategory = useMemo(() => categoryData.length ? categoryData.reduce((a, b) => (a.value > b.value ? a : b)) : null, [categoryData]);
+
   useEffect(() => {
-    if (!warnedRef.current && budget > 0 && expenses >= budget * 0.9) {
+    if (!warnedRef.current && budget > 0 && monthlyTotal >= budget * 0.9) {
       warnedRef.current = true;
-      alert("⚠️ 90% budget used");
+      toast("⚠️ You've used 90% of your budget!", { icon: "🔥" });
     }
-  }, [expenses, budget]);
+  }, [monthlyTotal, budget]);
+
+  const handleAdd = async () => {
+    if (!inputAmount || Number(inputAmount) <= 0) { toast.error("Enter valid amount"); return; }
+    if (!selectedCategory) { toast.error("Select a category"); return; }
+    setLoading(true);
+    try {
+      await budgetAPI.addExpense({ amount: Number(inputAmount), category: selectedCategory });
+      setInputAmount(""); setSelectedCategory("");
+      await fetchData();
+      toast.success("Expense added");
+    } catch (err) { toast.error(err.response?.data?.message || "Failed"); }
+    finally { setLoading(false); }
+  };
+
+  const handleUpdateBudget = async () => {
+    try {
+      await budgetAPI.update(budget);
+      toast.success("Budget updated");
+    } catch { toast.error("Update failed"); }
+  };
+
+  const handleDelete = async (id) => {
+    try { await budgetAPI.deleteExpense(id); await fetchData(); toast.success("Deleted"); }
+    catch { toast.error("Delete failed"); }
+  };
+
+  if (!pinVerified) {
+    return (
+      <>
+        <Navbar />
+        <div className="page-center">
+          <div className="modal-content animate-in text-center" style={{ maxWidth: 380 }}>
+            <h2 className="heading-md">Enter PIN</h2>
+            <p className="text-muted text-sm" style={{ margin: "0.5rem 0 1.5rem" }}>Verify identity to access budget</p>
+            <input className="input input-pin" type="password" maxLength={4} placeholder="••••" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} autoFocus />
+            <button className="btn btn-primary btn-full" style={{ marginTop: "1rem" }} onClick={verifyPin}>Verify</button>
+          </div>
+        </div>
+        <Toaster position="bottom-center" toastOptions={{ style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" } }} />
+      </>
+    );
+  }
 
   return (
     <>
       <Navbar />
+      <main className="page"><div className="container" style={{ maxWidth: 900 }}>
+        <h1 className="heading-lg" style={{ marginBottom: "1.5rem" }}>Budget Tracker</h1>
 
-      <div className="container mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold mb-6">Budget Tracker 💸</h1>
-
-        {/* BUDGET */}
-        <div className="mb-6">
-          <input
-            type="number"
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
-            className="p-2 border rounded mr-2"
-          />
-          <button
-            onClick={handleUpdateBudget}
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Update
-          </button>
+        {/* Budget + Summary */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
+          <div className="glass-card" style={{ padding: "1.25rem" }}>
+            <p className="text-muted text-sm">Monthly Budget</p>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+              <input className="input" type="number" value={budget} onChange={(e) => setBudget(Number(e.target.value))} style={{ flex: 1 }} />
+              <button className="btn btn-primary" onClick={handleUpdateBudget}>Set</button>
+            </div>
+          </div>
+          <div className="glass-card" style={{ padding: "1.25rem" }}>
+            <p className="text-muted text-sm">Spent</p>
+            <p className="amount amount-debit" style={{ fontSize: "1.5rem" }}>₹{monthlyTotal.toLocaleString()}</p>
+          </div>
+          <div className="glass-card" style={{ padding: "1.25rem" }}>
+            <p className="text-muted text-sm">Remaining</p>
+            <p className={`amount ${remaining < 0 ? "amount-debit" : "amount-credit"}`} style={{ fontSize: "1.5rem" }}>₹{remaining.toLocaleString()}</p>
+            {remaining < 0 && <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}><AlertTriangle size={14} color="var(--error)" /><span className="text-xs" style={{ color: "var(--error)" }}>Over budget</span></div>}
+          </div>
         </div>
 
-        {/* ADD EXPENSE */}
-        <div className="mb-6 flex gap-2">
-          <input
-            value={inputExpense}
-            onChange={(e) => setInputExpense(e.target.value)}
-            placeholder="Amount"
-            className="p-2 border rounded"
-          />
+        {/* Add Expense */}
+        <div className="glass-card" style={{ padding: "1.25rem", marginBottom: "2rem" }}>
+          <p className="heading-sm" style={{ marginBottom: "0.75rem" }}>Add Expense</p>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <input className="input" placeholder="Amount" type="number" value={inputAmount} onChange={(e) => setInputAmount(e.target.value)} style={{ flex: "1 1 120px" }} />
+            <select className="input" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} style={{ flex: "1 1 150px" }}>
+              <option value="">Category</option>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button className="btn btn-primary" onClick={handleAdd} disabled={loading}><Plus size={16} /> {loading ? "Adding..." : "Add"}</button>
+          </div>
+        </div>
 
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Category</option>
-            {categories.map((c) => (
-              <option key={c}>{c}</option>
+        {/* Month Filter */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <select className="input" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ maxWidth: 200 }}>
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i} value={i + 1}>{new Date(0, i).toLocaleString("default", { month: "long" })}</option>
             ))}
           </select>
-
-          <button
-            onClick={handleAddExpense}
-            disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            {loading ? "Adding..." : "Add"}
-          </button>
         </div>
 
-        {/* FILTER */}
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="mb-4 p-2 border rounded"
-        >
-          {Array.from({ length: 12 }, (_, i) => (
-            <option key={i} value={i + 1}>
-              {new Date(0, i).toLocaleString("default", { month: "long" })}
-            </option>
-          ))}
-        </select>
-
-        {/* TABLE */}
-        <table className="w-full border">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredExpenses.map((e) => (
-              <tr key={e._id}>
-                <td>{new Date(e.date).toLocaleDateString()}</td>
-                <td>₹{e.amount}</td>
-                <td>{e.category}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* SUMMARY */}
-        <div className="mt-6 font-bold">
-          Total: ₹{monthlyTotal} <br />
-          Remaining:{" "}
-          <span className={remaining < 0 ? "text-red-500" : "text-green-600"}>
-            ₹{remaining}
-          </span>
-        </div>
-
-        {/* 📊 ANALYTICS */}
-        <div className="mt-10">
-          <h2 className="text-xl font-bold mb-4">Spending Insights 📊</h2>
-
-          {categoryData.length === 0 ? (
-            <p className="text-gray-500">No data for this month</p>
-          ) : (
-            <div className="flex flex-col items-center gap-6">
-              {/* PIE CHART */}
-              <div className="w-[300px] h-[300px]">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+          {/* Chart */}
+          {categoryData.length > 0 && (
+            <div className="glass-card" style={{ padding: "1.25rem" }}>
+              <p className="heading-sm" style={{ marginBottom: "0.75rem" }}>Spending Breakdown</p>
+              <div style={{ width: "100%", height: 250 }}>
                 <ResponsiveContainer>
                   <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      dataKey="value"
-                      label
-                    >
-                      {categoryData.map((_, index) => (
-                        <Cell
-                          key={index}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
+                    <Pie data={categoryData} cx="50%" cy="50%" outerRadius={90} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                      {categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-
-              {/* TOP CATEGORY */}
-              {topCategory && (
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">Top Spending</p>
-                  <p className="font-bold text-lg">
-                    {topCategory.name} 💸 ₹{topCategory.value}
-                  </p>
-                </div>
-              )}
+              {topCategory && <p className="text-sm text-muted text-center" style={{ marginTop: "0.5rem" }}>Top: <strong style={{ color: "var(--text-primary)" }}>{topCategory.name}</strong> — ₹{topCategory.value}</p>}
             </div>
           )}
-        </div>
 
-        {/* PIN MODAL */}
-        {showPinModal && (
-          <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-            <div className="bg-white p-4 rounded">
-              <input
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="Enter PIN"
-                className="border p-2 mb-2"
-              />
-              <button
-                onClick={handlePinSubmit}
-                className="bg-green-500 text-white px-4 py-2"
-              >
-                Submit
-              </button>
-            </div>
+          {/* Expense List */}
+          <div className="glass-card" style={{ padding: "1.25rem", maxHeight: 400, overflowY: "auto" }}>
+            <p className="heading-sm" style={{ marginBottom: "0.75rem" }}>Expenses</p>
+            {filtered.length === 0 ? <p className="text-muted text-sm">No expenses this month</p> : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {filtered.map((e) => (
+                  <div key={e._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 0", borderBottom: "1px solid var(--border)" }}>
+                    <div>
+                      <p style={{ fontSize: "0.875rem", fontWeight: 500 }}>₹{e.amount}</p>
+                      <p className="text-muted text-xs">{e.category} · {new Date(e.date).toLocaleDateString()}</p>
+                    </div>
+                    <button className="btn btn-ghost" onClick={() => handleDelete(e._id)} style={{ padding: "0.375rem", color: "var(--text-muted)" }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </div></main>
+      <Toaster position="bottom-center" toastOptions={{ style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" } }} />
     </>
   );
-};
-
-export default BudgetTracker;
+}

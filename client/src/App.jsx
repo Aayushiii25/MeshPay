@@ -1,59 +1,75 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
 import "./App.css";
 
-// 🔐 Auth
+// Auth
 import Login from "./components/Login";
 import Signup from "./components/Signup";
-// 🌐 Online pages
-import HomeOnline from "./pages/online/HomeOnline";
-import PayUPI from "./pages/online/PayUPI";
-import Transaction from "./pages/online/Transaction";
-import CheckBalance from "./pages/online/CheckBalance";
-import QrCode from "./pages/online/QrCode";
-import QrScanner from "./pages/online/QrScanner";
 
-// 📡 Offline pages
-import HomeOffline from "./pages/offline/HomeOffline";
-import PayUPIOffline from "./pages/offline/PayUPIOffline";
-import TransactionOffline from "./pages/offline/TransactionOffline";
-import CheckBalanceOffline from "./pages/offline/CheckBalanceOffline";
-import OfflinePay from "./pages/offline/OfflinePay";
+// Lazy-loaded pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const PayUPI = lazy(() => import("./pages/online/PayUPI"));
+const Transaction = lazy(() => import("./pages/online/Transaction"));
+const CheckBalance = lazy(() => import("./pages/online/CheckBalance"));
+const QrCode = lazy(() => import("./pages/online/QrCode"));
+const QrScanner = lazy(() => import("./pages/online/QrScanner"));
+const BudgetTracker = lazy(() => import("./pages/utility/BudgetTracker"));
+const Notes = lazy(() => import("./pages/utility/EnhancedOfflineNotes"));
 
-// 🧠 Utility pages
-import BudgetTracker from "./pages/utility/BudgetTracker";
-import EnhancedOfflineNotes from "./pages/utility/EnhancedOfflineNotes";
+// Offline pages (keep existing for now)
+const PayUPIOffline = lazy(() => import("./pages/offline/PayUPIOffline"));
+const OfflinePay = lazy(() => import("./pages/offline/OfflinePay"));
+
+function PageLoader() {
+  return (
+    <div className="page-center">
+      <div className="flex flex-col items-center gap-2">
+        <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%" }} />
+        <p className="text-muted text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* 🔐 Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+    <AuthProvider>
+      <Router>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Auth */}
+            <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+            <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
 
-        {/* 🌐 Online */}
-        <Route path="/" element={<HomeOnline />} />
-        <Route path="/qr" element={<QrCode />} />
-        <Route path="/qrscanner" element={<QrScanner />} />
-        <Route path="/payUpi" element={<PayUPI />} />
-        <Route path="/transaction" element={<Transaction />} />
-        <Route path="/checkBalance" element={<CheckBalance />} />
+            {/* Protected */}
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/pay" element={<ProtectedRoute><PayUPI /></ProtectedRoute>} />
+            <Route path="/transactions" element={<ProtectedRoute><Transaction /></ProtectedRoute>} />
+            <Route path="/balance" element={<ProtectedRoute><CheckBalance /></ProtectedRoute>} />
+            <Route path="/qr" element={<ProtectedRoute><QrCode /></ProtectedRoute>} />
+            <Route path="/qrscanner" element={<ProtectedRoute><QrScanner /></ProtectedRoute>} />
+            <Route path="/budget" element={<ProtectedRoute><BudgetTracker /></ProtectedRoute>} />
+            <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
 
-        {/* 📡 Offline */}
-        <Route path="/offlinePay" element={<HomeOffline />} />
-        <Route path="/offline" element={<OfflinePay />} />
-        <Route path="/payUpiOffline" element={<PayUPIOffline />} />
-        <Route path="/transactionOffline" element={<TransactionOffline />} />
-        <Route path="/checkbalanceoffline" element={<CheckBalanceOffline />} />
+            {/* Offline */}
+            <Route path="/offline" element={<ProtectedRoute><OfflinePay /></ProtectedRoute>} />
+            <Route path="/offline/pay" element={<ProtectedRoute><PayUPIOffline /></ProtectedRoute>} />
 
-        {/* 🧠 Utility */}
-        <Route path="/budgetTracker" element={<BudgetTracker />} />
-        <Route
-          path="/enhancedofflinenotes"
-          element={<EnhancedOfflineNotes />}
-        />
-      </Routes>
-    </Router>
+            {/* 404 */}
+            <Route path="*" element={
+              <div className="page-center">
+                <div className="text-center">
+                  <h1 className="heading-xl">404</h1>
+                  <p className="text-muted" style={{ marginTop: "0.5rem" }}>Page not found</p>
+                </div>
+              </div>
+            } />
+          </Routes>
+        </Suspense>
+      </Router>
+    </AuthProvider>
   );
 }
 
