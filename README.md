@@ -84,21 +84,7 @@ Pin, archive, categorize, and CRUD personal/work/transaction notes. Sorted by pi
 
 ## Screenshots
 
-> Capture these screens for maximum recruiter impact:
 
-| Screen | What to Show |
-|--------|-------------|
-| **Login** | Dark card on black bg, neon green CTA button |
-| **Dashboard** | 8-card feature grid with icon accent colors |
-| **PayUPI — Step 1/2/3** | Progress bar wizard, confirmation review screen |
-| **Transaction History** | Dark list with red/green badge pills, search bar |
-| **QR Code** | White QR on dark glass card, copy + download buttons |
-| **QR Scanner** | Live camera view inside modal |
-| **Budget Tracker** | Pie chart + expense table + budget stats side by side |
-| **Notes** | Card grid with pin/archive/edit actions |
-| **Mobile — Dashboard** | Responsive hamburger nav + card grid |
-
-<br/>
 
 <div align="center">
 
