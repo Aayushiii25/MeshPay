@@ -300,28 +300,8 @@ Open **http://localhost:5173**
 
 ---
 
-## Environment Variables
 
-### `server/.env`
 
-```env
-PORT=8000
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/meshpay
-SECRET_KEY=your_jwt_secret_minimum_32_chars
-NODE_ENV=development
-
-# Optional — enables offline SMS payments
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=your_auth_token
-TWILIO_PHONE_NUMBER=+17752787510
-MY_PHONE_NUMBER=+91XXXXXXXXXX
-```
-
-### `client/.env`
-
-```env
-VITE_API_URL=http://localhost:8000
-```
 
 ---
 
