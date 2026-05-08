@@ -1,18 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+
 import logo from "../assets/logo.png";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { motion } from "framer-motion";
+
+import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
 
   const [userName, setUserName] = useState("");
+
   const [password, setPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
+
   const userNameRef = useRef(null);
 
   useEffect(() => {
@@ -21,6 +28,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
 
     try {
@@ -33,7 +41,9 @@ export default function Login() {
       );
 
       localStorage.setItem("userId", res.data.user._id);
+
       localStorage.setItem("user", res.data.user.upiId);
+
       localStorage.setItem("token", res.data.token);
 
       toast.success("Login successful 🚀");
@@ -49,114 +59,79 @@ export default function Login() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center 
-    bg-gradient-to-br from-indigo-200 via-purple-200 to-blue-200 
-    dark:from-black dark:via-gray-900 dark:to-black 
-    relative overflow-hidden"
-    >
-      {/* Glow Background */}
-      <div className="absolute w-[500px] h-[500px] bg-purple-400 opacity-20 blur-3xl rounded-full top-10 left-10 animate-pulse"></div>
-      <div className="absolute w-[400px] h-[400px] bg-blue-400 opacity-20 blur-3xl rounded-full bottom-10 right-10 animate-pulse"></div>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border p-8">
+        {/* logo */}
+        <img src={logo} alt="logo" className="w-28 mx-auto mb-6" />
 
-      <section className="w-full relative z-10">
-        <div className="flex flex-col items-center px-6 mx-auto">
-          {/* Logo */}
-          <Link to="/" className="mb-8 hover:scale-110 transition">
-            <img className="w-60 h-20" src={logo} alt="logo" />
-          </Link>
+        {/* tabs */}
+        <div className="flex gap-2 mb-8">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl border shadow text-sm">
+            <LogIn size={16} />
+            Login
+          </button>
 
-          {/* Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md rounded-xl 
-            bg-white/80 backdrop-blur-xl 
-            border border-white/20 
-            shadow-[0_0_40px_rgba(99,102,241,0.3)] 
-            hover:shadow-[0_0_60px_rgba(99,102,241,0.6)] 
-            transition-all duration-500"
+          <Link
+            to="/signup"
+            className="flex items-center gap-2 px-4 py-2 text-gray-500 text-sm"
           >
-            <div className="p-8 space-y-6">
-              {/* Title */}
-              <h1
-                className="text-4xl font-extrabold text-center 
-              bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-              bg-clip-text text-transparent animate-pulse"
-              >
-                Welcome Back 🚀
-              </h1>
-
-              <p className="text-center text-gray-700">
-                Login to continue to your account
-              </p>
-
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                {/* Username */}
-                <input
-                  type="text"
-                  ref={userNameRef}
-                  placeholder="Enter your username"
-                  required
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="w-full p-3 bg-white/80 border rounded-lg 
-                  focus:ring-2 focus:ring-indigo-500 
-                  focus:shadow-[0_0_10px_rgba(99,102,241,0.8)] 
-                  transition-all"
-                />
-
-                {/* Password */}
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    required
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-3 bg-white/80 border rounded-lg 
-                    focus:ring-2 focus:ring-indigo-500"
-                  />
-
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-
-                {/* Loading */}
-                {loading ? (
-                  <div className="flex justify-center">
-                    <div className="animate-spin h-10 w-10 border-t-2 border-indigo-500 rounded-full"></div>
-                  </div>
-                ) : (
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-                    text-white py-3 rounded-lg text-xl font-bold 
-                    hover:shadow-[0_0_20px_rgba(236,72,153,0.8)] 
-                    transform hover:scale-110 transition-all"
-                  >
-                    Login 🔥
-                  </button>
-                )}
-
-                {/* Signup */}
-                <p className="text-center text-lg">
-                  Don’t have an account?{" "}
-                  <Link
-                    to="/signup"
-                    className="text-indigo-600 font-semibold hover:underline"
-                  >
-                    Sign Up
-                  </Link>
-                </p>
-              </form>
-            </div>
-          </motion.div>
+            <UserPlus size={16} />
+            Sign Up
+          </Link>
         </div>
-      </section>
+
+        {/* title */}
+        <h1 className="text-3xl font-bold mb-2">Welcome Back 🚀</h1>
+
+        <p className="text-gray-500 mb-8">Login to continue to your account</p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* username */}
+          <input
+            ref={userNameRef}
+            type="text"
+            placeholder="Enter username"
+            required
+            onChange={(e) => setUserName(e.target.value)}
+            className="w-full border rounded-2xl px-5 py-4"
+          />
+
+          {/* password */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter password"
+              required
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border rounded-2xl px-5 py-4 pr-12"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+            >
+              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+          </div>
+
+          {/* button */}
+          <button
+            disabled={loading}
+            className="w-full bg-black text-white py-4 rounded-2xl font-medium"
+          >
+            {loading ? "Logging in..." : "Log In"}
+          </button>
+        </form>
+
+        {/* footer */}
+        <p className="text-center mt-6 text-sm text-gray-500">
+          Don’t have an account?
+          <Link to="/signup" className="ml-2 font-medium text-black">
+            Sign up
+          </Link>
+        </p>
+      </div>
 
       <Toaster position="bottom-center" />
     </div>

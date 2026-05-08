@@ -2,9 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
 // 🔐 Auth
-import Login from "./components/auth/Login";
-import Signup from "./components/auth/Signup";
-
+import Login from "./components/Login";
+import Signup from "./components/Signup";
 // 🌐 Online pages
 import HomeOnline from "./pages/online/HomeOnline";
 import PayUPI from "./pages/online/PayUPI";

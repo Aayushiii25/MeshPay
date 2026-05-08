@@ -3,8 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import logo from "../assets/logo.png";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -23,6 +22,7 @@ export default function Signup() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -31,6 +31,7 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
 
     try {
@@ -48,174 +49,128 @@ export default function Signup() {
         phoneNo: Number(formData.phoneNo),
       });
 
-      toast.success("Registration successful!");
+      toast.success("Registration successful 🚀");
 
       setTimeout(() => {
         navigate("/login");
       }, 1500);
     } catch (error) {
-      const msg =
-        error.response?.data?.message || error.message || "Signup failed";
-      toast.error(msg);
+      toast.error(error.response?.data?.message || error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-8 
-    bg-gradient-to-br from-indigo-200 via-purple-200 to-blue-200 
-    dark:from-black dark:via-gray-900 dark:to-black 
-    relative overflow-hidden"
-    >
-      {/* Glow Effects */}
-      <div className="absolute w-[500px] h-[500px] bg-purple-400 opacity-20 blur-3xl rounded-full top-10 left-10 animate-pulse"></div>
-      <div className="absolute w-[400px] h-[400px] bg-blue-400 opacity-20 blur-3xl rounded-full bottom-10 right-10 animate-pulse"></div>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border p-8">
+        {/* logo */}
+        <img src={logo} alt="logo" className="w-28 mx-auto mb-6" />
 
-      <section className="w-full relative z-10">
-        <div className="flex flex-col items-center justify-center px-6 mx-auto">
-          {/* Logo */}
+        {/* tabs */}
+        <div className="flex gap-2 mb-8">
           <Link
-            to="/"
-            className="flex items-center mb-8 hover:scale-110 transition-transform"
+            to="/login"
+            className="flex items-center gap-2 px-4 py-2 text-gray-500 text-sm"
           >
-            <img className="w-60 h-20" src={logo} alt="logo" />
+            <LogIn size={16} />
+            Login
           </Link>
 
-          {/* Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl rounded-xl 
-            bg-white/80 backdrop-blur-xl 
-            border border-white/20 
-            shadow-[0_0_40px_rgba(99,102,241,0.3)] 
-            hover:shadow-[0_0_60px_rgba(99,102,241,0.6)] 
-            transition-all duration-500"
-          >
-            <div className="p-8 space-y-6">
-              {/* Title */}
-              <h1
-                className="text-4xl font-extrabold text-center 
-              bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-              bg-clip-text text-transparent animate-pulse"
-              >
-                Create Account
-              </h1>
-
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                {/* Username */}
-                <input
-                  type="text"
-                  name="userName"
-                  placeholder="Username"
-                  required
-                  value={formData.userName}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/80 border rounded-lg 
-                  focus:ring-2 focus:ring-indigo-500 
-                  focus:shadow-[0_0_10px_rgba(99,102,241,0.8)] 
-                  transition-all"
-                />
-
-                {/* Full Name */}
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  required
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/80 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-
-                {/* Email */}
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/80 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-
-                {/* PIN */}
-                <input
-                  type="number"
-                  name="pin"
-                  placeholder="4-digit PIN"
-                  required
-                  value={formData.pin}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/80 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-
-                {/* Phone */}
-                <input
-                  type="tel"
-                  name="phoneNo"
-                  placeholder="Phone Number"
-                  required
-                  value={formData.phoneNo}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-white/80 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-
-                {/* Password */}
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full p-3 bg-white/80 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  />
-
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-
-                {/* Loading */}
-                {loading ? (
-                  <div className="flex justify-center">
-                    <div className="animate-spin h-10 w-10 border-t-2 border-indigo-500 rounded-full"></div>
-                  </div>
-                ) : (
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-                    text-white py-3 rounded-lg text-xl font-bold 
-                    hover:shadow-[0_0_20px_rgba(236,72,153,0.8)] 
-                    transform hover:scale-110 transition-all"
-                  >
-                    Sign Up 🚀
-                  </button>
-                )}
-
-                {/* Login */}
-                <p className="text-center text-lg">
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="text-indigo-600 font-semibold hover:underline"
-                  >
-                    Login
-                  </Link>
-                </p>
-              </form>
-            </div>
-          </motion.div>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl border shadow text-sm">
+            <UserPlus size={16} />
+            Sign Up
+          </button>
         </div>
-      </section>
+
+        {/* heading */}
+        <h1 className="text-3xl font-bold mb-2">Create Account ✨</h1>
+
+        <p className="text-gray-500 mb-8">Join MeshPay today</p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            name="userName"
+            placeholder="Username"
+            value={formData.userName}
+            onChange={handleChange}
+            required
+            className="w-full border rounded-2xl px-5 py-4"
+          />
+
+          <input
+            name="fullName"
+            placeholder="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+            className="w-full border rounded-2xl px-5 py-4"
+          />
+
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="w-full border rounded-2xl px-5 py-4"
+          />
+
+          <input
+            name="pin"
+            placeholder="4-digit PIN"
+            value={formData.pin}
+            onChange={handleChange}
+            required
+            className="w-full border rounded-2xl px-5 py-4"
+          />
+
+          <input
+            name="phoneNo"
+            placeholder="Phone Number"
+            value={formData.phoneNo}
+            onChange={handleChange}
+            required
+            className="w-full border rounded-2xl px-5 py-4"
+          />
+
+          {/* password */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-2xl px-5 py-4 pr-12"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+            >
+              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+          </div>
+
+          <button
+            disabled={loading}
+            className="w-full bg-black text-white py-4 rounded-2xl font-medium"
+          >
+            {loading ? "Creating..." : "Create Account"}
+          </button>
+        </form>
+
+        <p className="text-center mt-6 text-sm text-gray-500">
+          Already have an account?
+          <Link to="/login" className="ml-2 font-medium text-black">
+            Login
+          </Link>
+        </p>
+      </div>
 
       <Toaster position="bottom-center" />
     </div>
