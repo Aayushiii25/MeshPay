@@ -450,16 +450,6 @@ API response:  toJSON() strips password + pin from every User object
 
 ---
 
-## Roadmap
-
-- [ ] **MongoDB Transactions** — Atomic balance transfers using `session.withTransaction()`
-- [ ] **Rate Limiting** — `express-rate-limit` on auth + payment endpoints
-- [ ] **Refresh Token Rotation** — Short-lived access tokens + rotating refresh tokens
-- [ ] **PWA + Service Worker** — True offline-first with background sync queue
-- [ ] **WebSocket Notifications** — Real-time payment received alerts
-- [ ] **Scheduled Sync** — Auto-process queued offline transactions when connectivity returns
-- [ ] **Docker + CI/CD** — `docker-compose.yml` + GitHub Actions pipeline
-- [ ] **Spending Insights AI** — LLM-powered analysis of spending patterns
 
 ---
 
