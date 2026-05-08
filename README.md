@@ -465,10 +465,13 @@ API response:  toJSON() strips password + pin from every User object
 
 ## Author
 
-**Aayushi Dhurandhar**  **Nehal Pandey**
+**Aayushi Dhurandhar** || **Nehal Pandey**
+
 
 
 [![GitHub](https://img.shields.io/badge/GitHub-Aayushiii25-181717?style=flat&logo=github)](https://github.com/Aayushiii25)
+[![GitHub](https://img.shields.io/badge/GitHub-nehalpandey-181717?style=flat&logo=github)](https://github.com/nehalpandey)
+
 
 ---
 
